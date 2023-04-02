@@ -37,7 +37,7 @@ type Event struct {
 	camera_id   int
 	description string
 	time_stamp  string
-	photo       string
+	photo       []byte
 }
 
 // А зачем мне интерфейс, если я буду только ивентами оперировать и только их передавать?
