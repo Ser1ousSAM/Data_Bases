@@ -28,8 +28,6 @@ func main() {
 	defer DBconn.Close(context.Background())
 
 	hub := newHub()
-	//как связать hub и data
-
 	// go hub.run()
 
 	http.HandleFunc("/ws", hub.serve)
