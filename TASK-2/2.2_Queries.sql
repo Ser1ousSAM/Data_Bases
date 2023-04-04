@@ -43,7 +43,7 @@ SELECT s.n_group, AVG(s.avg_score)::real as average_grade
 FROM student s
 GROUP BY s.n_group
 HAVING AVG(avg_score) <=4.5
-ORDER BY average_grade
+ORDER BY average_grade;
 
 --8)
 SELECT s.n_group,
@@ -52,7 +52,7 @@ SELECT s.n_group,
     AVG(s.avg_score)::real as average_grade,
     MIN(s.avg_score)::real as min_grade
 FROM student s
-GROUP BY s.n_group
+GROUP BY s.n_group;
 
 --9)
 UPDATE student
@@ -66,7 +66,7 @@ WHERE s.n_group = 3022 AND s.avg_score = (
     SELECT MAX(s.avg_score)
     FROM student s
     WHERE s.n_group = 3022
-)
+);
 
 --10)
 SELECT s.*
@@ -75,12 +75,4 @@ FROM student s,
         MAX(s.avg_score) as av
     FROM student s
     GROUP BY n_group) as T
-WHERE s.n_group = T.n_group AND s.avg_score = T.av
-
-SELECT s.n_group,
-    MAX(s.avg_score)
-FROM student s
-GROUP BY s.n_group
-
-SELECT *
-FROM student s
+WHERE s.n_group = T.n_group AND s.avg_score = T.av;
