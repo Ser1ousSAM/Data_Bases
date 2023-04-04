@@ -1,38 +1,37 @@
 package main
 
 import (
-	"flag"
+	"context"
 	"log"
 	"net/http"
+
+	"github.com/jackc/pgx/v5"
 )
 
-var addr = flag.String("addr", ":8080", "http service address")
-
-func serveHome(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.URL)
-	if r.URL.Path != "/" {
-		http.Error(w, "Not found", http.StatusNotFound)
-		return
-	}
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	http.ServeFile(w, r, "home.html")
-}
-
 func main() {
-	flag.Parse()
+	//Connecting to DB
+	connString := "postgres://user:password@host:port/database"
+	config, err := pgx.ParseConfig(connString)
+	if err != nil {
+		log.Fatalf("Unable to parse config: %v\n", err)
+	}
+	config.Host = "localhost"
+	config.User = "postgres"
+	config.Database = "hackaton"
+	config.Password = "password"
+	config.Port = 5432
+
+	DBconn, err := pgx.ConnectConfig(context.Background(), config)
+	if err != nil {
+		log.Fatalf("Unable to connect to database: %v\n", err)
+	}
+	defer DBconn.Close(context.Background())
+
 	hub := newHub()
 	//как связать hub и data
-	go hub.run()
-	go http.HandleFunc("/", handleRequest)
-	http.HandleFunc("/", serveHome)
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		serveWs(hub, w, r)
-	})
-	err := http.ListenAndServe(*addr, nil)
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
+
+	// go hub.run()
+
+	http.HandleFunc("/ws", hub.serve)
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
