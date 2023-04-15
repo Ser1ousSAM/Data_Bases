@@ -1,26 +1,29 @@
 ---1)
+--right variant on your opinion
 SELECT s.name, s.surname, h.name as hobby_name
 FROM student s
          JOIN student_hobby sh ON s.id = sh.id_student
-         JOIN hobby h ON h.id = sh.id_hobby
-WHERE h.name IN (SELECT h2.name
-                 FROM student s2
-                          JOIN student_hobby sh2 ON s2.id = sh2.id_student
-                          JOIN hobby h2 ON h2.id = sh2.id_hobby
-                 WHERE s2.name = 'Gleb'
-                   AND s2.surname = 'Valakov');
+         JOIN hobby h ON (h.id = sh.id_hobby);
+
+--my variant
+SELECT s.name, s.surname, h.name AS hobby_name
+FROM student s
+         JOIN student_hobby sh ON s.id = sh.id_student
+         JOIN hobby h ON (h.id = sh.id_hobby)
+WHERE h.id = (SELECT sh.id_hobby
+              FROM student_hobby sh,
+                   student s
+              WHERE s.id = sh.id_student
+                AND s.name = 'Valera'
+                AND s.surname = 'Borov');
 
 ---2)
 SELECT s.name, s.surname, h.name AS hobby_name, sh.date_start, sh.date_finish
 FROM student s
          JOIN student_hobby sh ON s.id = sh.id_student
          JOIN hobby h ON h.id = sh.id_hobby
-WHERE sh.date_finish = (SELECT MAX(date_finish)
-                        FROM student_hobby)
-  AND sh.date_start = (SELECT MIN(date_start)
-                       FROM student_hobby
-                       WHERE date_finish = (SELECT MAX(date_finish)
-                                            FROM student_hobby))
+WHERE sh.date_finish IS NULL
+ORDER BY sh.date_start
 LIMIT 1;
 
 ---3)
@@ -28,15 +31,9 @@ SELECT s.name, s.surname, s.id, s.date_birth
 FROM student s
          JOIN student_hobby sh ON s.id = sh.id_student
          JOIN hobby h ON h.id = sh.id_hobby
-WHERE s.avg_score > (SELECT AVG(avg_score)
-                     FROM student)
-  AND (SELECT SUM(risk)
-       FROM hobby
-       WHERE id IN (SELECT id_hobby
-                    FROM student_hobby
-                    WHERE id_student = s.id
-                      AND date_start <= NOW()
-                      AND (date_finish >= NOW() OR date_finish IS NULL))) > 0.9;
+WHERE sh.date_finish IS NULL
+GROUP BY s.name, s.surname, s.id, s.date_birth
+HAVING AVG(h.risk) > 0.9;
 
 --4)
 SELECT s.surname,
@@ -318,13 +315,25 @@ FROM student s
 WHERE s.avg_score >= 4.5;
 
 --27)
+--with avg_score
 SELECT substr(s.name, 1, 1) AS letter,
        MIN(s.avg_score)     AS min_score,
        AVG(s.avg_score)     AS avg_score,
        MAX(s.avg_score)     AS max_score
 FROM student s
 WHERE s.avg_score > 3.6
-GROUP BY letter;
+GROUP BY letter
+ORDER BY letter;
+
+--with median_score
+SELECT substr(s.name, 1, 1)                                     AS letter,
+       MIN(s.avg_score)                                         AS min_score,
+       percentile_cont(0.5) WITHIN GROUP (ORDER BY s.avg_score) AS median_score,
+       MAX(s.avg_score)                                         AS max_score
+FROM student s
+WHERE s.avg_score > 3.6
+GROUP BY letter
+ORDER BY letter;
 
 --28)
 SELECT s.n_group / 1000 as couse, s.surname, MAX(s.avg_score), MIN(s.avg_score)
@@ -409,3 +418,46 @@ FROM student s
          JOIN student_hobby sh ON s.id = sh.id_student
          JOIN hobby h ON h.id = sh.id_hobby;
 --40)
+
+SELECT s.n_group AS score,
+       COUNT(CASE
+                 WHEN round(s.avg_score) = 5 THEN 1
+           END)  AS "5",
+       COUNT(CASE
+                 WHEN round(s.avg_score) = 4 THEN 1
+           END)  AS "4",
+       COUNT(CASE
+                 WHEN round(s.avg_score) = 3 THEN 1
+           END)  AS "3",
+       COUNT(CASE
+                 WHEN round(s.avg_score) = 2 THEN 1
+           END)  AS "2"
+FROM student AS s
+GROUP BY s.n_group
+ORDER BY s.n_group;
+
+
+SELECT *
+FROM crosstab(
+             'SELECT round(avg_score) as mark, s.n_group, count(*)
+FROM student AS s
+GROUP BY mark, s.n_group
+ORDER BY 1, 2')
+         AS ct(marks double precision,
+               "2201" bigint,
+               "2202" bigint,
+               "2203" bigint,
+               "3012" bigint,
+               "3020" bigint,
+               "3022" bigint,
+               "3023" bigint);
+
+SELECT round(avg_score) as mark, s.n_group, count(*)
+FROM student AS s
+GROUP BY mark, s.n_group
+ORDER BY 1, 2;
+
+
+
+
+
