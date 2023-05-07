@@ -106,6 +106,7 @@ WHERE sh.id_student = T1.id
 GROUP BY h.name;
 
 --10)
+--realisation1
 SELECT substr(T1.course2, 1, 1) as course_number
 FROM (SELECT substr(s.n_group::varchar, 1, 1) AS course1, count(*) AS count
       FROM student s,
@@ -121,6 +122,21 @@ FROM (SELECT substr(s.n_group::varchar, 1, 1) AS course1, count(*) AS count
       GROUP BY course2) AS T1
 WHERE T1.course2 = T2.course1
   AND T2.count >= T1.count * 0.5;
+
+--realisation2
+SELECT substr(s.n_group::varchar, 1, 1) as course, count(*)
+FROM student s
+GROUP BY course;
+
+SELECT substr(n_group::varchar, 1, 1) as course, count(*)
+FROM(
+    SELECT student.n_group
+    FROM student
+    INNER JOIN student_hobby sh on student.id = sh.id_student
+    WHERE sh.date_finish IS NULL
+    GROUP BY student.id
+    ) t
+GROUP BY substr(n_group::varchar, 1, 1);
 
 --11)
 SELECT T2.n_group
